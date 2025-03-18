@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package grpc.examples.ping;
+
+// PingRequest is the request for ping.
+message PingRequest {
+    string message = 1;
+}
+
+// PingResponse is the response for ping.
+message PingResponse {
+    string message = 1;
+}
+
+// Ping is the service for ping.
+service Ping {
+    // Ping the server.
+    rpc Ping(PingRequest) returns (PingResponse) {}
+}

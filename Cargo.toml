@@ -1,0 +1,20 @@
+[package]
+name = "fastrace-tonic"
+version = "0.1.0"
+
+categories = ["development-tools::debugging"]
+description = "A tonic instrument for propagating trace context for fastrace"
+keywords = ["tracing", "fastrace", "tonic", "traceparent", "propagation"]
+readme = "README.md"
+
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/fast/fastrace-tonic"
+rust-version = "1.75"
+
+[dependencies]
+fastrace = "0.7"
+tonic = "0.12"
+tower-layer = "0.3"
+tower-service = "0.3"
+http = "1.2"
