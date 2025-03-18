@@ -25,8 +25,6 @@ pub struct MyPing {}
 #[tonic::async_trait]
 impl Ping for MyPing {
     /// Handles ping requests and responds with "pong".
-    ///
-    /// The handler is annotated with the fastrace::trace attribute to create a span.
     #[fastrace::trace]
     async fn ping(&self, _req: Request<PingRequest>) -> Result<Response<PingResponse>, Status> {
         let reply = PingResponse {
