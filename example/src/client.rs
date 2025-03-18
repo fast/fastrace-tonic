@@ -41,16 +41,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 #[fastrace::trace]
 async fn ping() -> Result<(), Box<dyn std::error::Error>> {
     // Connect to the gRPC server.
-    let channel = Channel::from_static("[::1]:50051")
-        .connect()
-        .await?;
-    
+    let channel = Channel::from_static("[::1]:50051").connect().await?;
+
     // Apply the fastrace client layer to the channel.
     // This layer will add trace context to outgoing requests.
     let channel = ServiceBuilder::new()
         .layer(fastrace_tonic::FastraceClientLayer)
         .service(channel);
-    
+
     // Create the client with the enhanced channel.
     let mut client = PingClient::new(channel);
 

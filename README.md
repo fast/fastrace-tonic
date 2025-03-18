@@ -86,13 +86,13 @@ async fn make_client_call() -> Result<(), Box<dyn std::error::Error>> {
 
 ## Example
 
-Check out the [examples directory](https://github.com/fast/fastrace-tonic/tree/main/examples) for a complete ping/pong service example that demonstrates both client and server tracing.
+Check out the [examples directory](https://github.com/fast/fastrace-tonic/tree/main/example) for a complete ping/pong service example that demonstrates both client and server tracing.
 
 To run the example:
 
-1. Navigate to the examples directory:
+1. Navigate to the example directory:
     ```
-    cd examples
+    cd example
     ```
 
 2. Start the server:

@@ -38,7 +38,11 @@ jobs:
       - name: Build
         run: cargo +${{ matrix.rust }} build --workspace --all-targets
 
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v3
+
       - name: Check examples
         run: |
-          cd examples && cargo +${{ matrix.rust }} check --example client
-          cd examples && cargo +${{ matrix.rust }} check --example server
+          cd example
+          cargo +${{ matrix.rust }} check --bin client
+          cargo +${{ matrix.rust }} check --bin server

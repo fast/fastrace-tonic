@@ -14,7 +14,6 @@ rust-version = "1.75"
 
 [dependencies]
 fastrace = "0.7"
-tonic = "0.12"
+http = "1.2"
 tower-layer = "0.3"
 tower-service = "0.3"
-http = "1.2"
