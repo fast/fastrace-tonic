@@ -46,7 +46,7 @@ async fn ping() -> Result<(), Box<dyn std::error::Error>> {
     // Apply the fastrace client layer to the channel.
     // This layer will add trace context to outgoing requests.
     let channel = ServiceBuilder::new()
-        .layer(fastrace_tonic::FastraceClientLayer)
+        .layer(fastrace_tonic::FastraceClientLayer::default())
         .service(channel);
 
     // Create the client with the enhanced channel.
