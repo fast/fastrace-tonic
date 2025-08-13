@@ -21,13 +21,34 @@ pub const TRACEPARENT_HEADER: &str = "traceparent";
 /// for each request. Add this to your tonic server to automatically handle trace context
 /// propagation.
 #[derive(Clone)]
-pub struct FastraceServerLayer;
+pub struct FastraceServerLayer {
+    span_context_fn: fn() -> SpanContext,
+}
+
+impl Default for FastraceServerLayer {
+    fn default() -> Self {
+        Self {
+            span_context_fn: || SpanContext::random(),
+        }
+    }
+}
+
+impl FastraceServerLayer {
+    /// Creates a new `FastraceServerLayer` with the default span context function.
+    pub fn span_context_fn(mut self, span_context_fn: fn() -> SpanContext) -> Self {
+        self.span_context_fn = span_context_fn;
+        self
+    }
+}
 
 impl<S> Layer<S> for FastraceServerLayer {
     type Service = FastraceServerService<S>;
 
     fn layer(&self, service: S) -> Self::Service {
-        FastraceServerService { service }
+        FastraceServerService {
+            service,
+            span_context_fn: self.span_context_fn,
+        }
     }
 }
 
@@ -39,6 +60,7 @@ impl<S> Layer<S> for FastraceServerLayer {
 #[derive(Clone)]
 pub struct FastraceServerService<S> {
     service: S,
+    span_context_fn: fn() -> SpanContext,
 }
 
 impl<S, Body> Service<Request<Body>> for FastraceServerService<S>
@@ -57,7 +79,7 @@ where S: Service<Request<Body>>
         let parent = headers
             .get(TRACEPARENT_HEADER)
             .and_then(|traceparent| SpanContext::decode_w3c_traceparent(traceparent.to_str().ok()?))
-            .unwrap_or(SpanContext::random());
+            .unwrap_or_else(self.span_context_fn);
         let root = Span::root(req.uri().to_string(), parent);
         self.service.call(req).in_span(root)
     }
@@ -69,7 +91,9 @@ where S: Service<Request<Body>>
 /// allowing the receiving service to continue the same trace. Add this
 /// to your tonic client to automatically propagate trace context.
 #[derive(Clone)]
-pub struct FastraceClientLayer;
+#[non_exhaustive]
+#[derive(Default)]
+pub struct FastraceClientLayer {}
 
 impl<S> Layer<S> for FastraceClientLayer {
     type Service = FastraceClientService<S>;

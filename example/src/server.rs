@@ -42,7 +42,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Build and start the server with the fastrace server layer.
     // This layer will extract trace context from incoming requests.
     Server::builder()
-        .layer(fastrace_tonic::FastraceServerLayer)
+        .layer(fastrace_tonic::FastraceServerLayer::default())
         .add_service(PingServer::new(MyPing::default()))
         .serve("[::1]:50051".parse().unwrap())
         .await?;
