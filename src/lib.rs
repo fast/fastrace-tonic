@@ -54,12 +54,15 @@ where S: Service<Request<Body>>
 
     fn call(&mut self, req: Request<Body>) -> Self::Future {
         let headers = req.headers();
-        let parent = headers
-            .get(TRACEPARENT_HEADER)
-            .and_then(|traceparent| SpanContext::decode_w3c_traceparent(traceparent.to_str().ok()?))
-            .unwrap_or(SpanContext::random());
-        let root = Span::root(req.uri().to_string(), parent);
-        self.service.call(req).in_span(root)
+        let parent = headers.get(TRACEPARENT_HEADER).and_then(|traceparent| {
+            SpanContext::decode_w3c_traceparent(traceparent.to_str().ok()?)
+        });
+        let span = if let Some(parent) = parent {
+            Span::root(req.uri().to_string(), parent)
+        } else {
+            Span::noop()
+        };
+        self.service.call(req).in_span(span)
     }
 }
 
