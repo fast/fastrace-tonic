@@ -57,11 +57,13 @@ where S: Service<Request<Body>>
         let parent = headers.get(TRACEPARENT_HEADER).and_then(|traceparent| {
             SpanContext::decode_w3c_traceparent(traceparent.to_str().ok()?)
         });
+
         let span = if let Some(parent) = parent {
             Span::root(req.uri().to_string(), parent)
         } else {
             Span::noop()
         };
+
         self.service.call(req).in_span(span)
     }
 }
@@ -109,6 +111,7 @@ where S: Service<Request<Body>>
                 HeaderValue::from_str(&current.encode_w3c_traceparent()).unwrap(),
             );
         }
+
         self.service.call(req)
     }
 }
