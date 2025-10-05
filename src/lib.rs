@@ -111,7 +111,7 @@ where S: Service<Request<Body>>
                 HeaderValue::from_str(&current.encode_w3c_traceparent()).unwrap(),
             );
         }
-        
+
         self.service.call(req)
     }
 }
