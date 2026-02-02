@@ -1,5 +1,6 @@
 #![doc = include_str!("../README.md")]
 
+use std::sync::Arc;
 use std::task::Context;
 use std::task::Poll;
 
@@ -15,19 +16,57 @@ use tower_service::Service;
 /// the W3C Trace Context specification.
 pub const TRACEPARENT_HEADER: &str = "traceparent";
 
+type SpanContextExtractor =
+    Arc<dyn Fn(&http::HeaderMap) -> Option<SpanContext> + Send + Sync + 'static>;
+
 /// Server layer for intercepting and processing trace context in incoming requests.
 ///
 /// This layer extracts tracing context from incoming requests and creates a new span
 /// for each request. Add this to your tonic server to automatically handle trace context
-/// propagation.
+/// propagation. By default, the layer uses the `traceparent` header to extract a span
+/// context and falls back to a random context when the header is missing or invalid.
+/// If the configured extractor returns `None`, a noop span is used.
 #[derive(Clone)]
-pub struct FastraceServerLayer;
+pub struct FastraceServerLayer {
+    span_context_extractor: SpanContextExtractor,
+}
+
+impl Default for FastraceServerLayer {
+    fn default() -> Self {
+        Self {
+            span_context_extractor: Arc::new(|headers| {
+                headers
+                    .get(TRACEPARENT_HEADER)
+                    .and_then(|traceparent| {
+                        SpanContext::decode_w3c_traceparent(traceparent.to_str().ok()?)
+                    })
+                    .or_else(|| Some(SpanContext::random()))
+            }),
+        }
+    }
+}
+
+impl FastraceServerLayer {
+    /// Configure a custom span context extractor.
+    ///
+    /// Return `None` to keep the span as noop.
+    pub fn with_span_context_extractor<F>(mut self, f: F) -> Self
+    where
+        F: Fn(&http::HeaderMap) -> Option<SpanContext> + Send + Sync + 'static,
+    {
+        self.span_context_extractor = Arc::new(f);
+        self
+    }
+}
 
 impl<S> Layer<S> for FastraceServerLayer {
     type Service = FastraceServerService<S>;
 
     fn layer(&self, service: S) -> Self::Service {
-        FastraceServerService { service }
+        FastraceServerService {
+            service,
+            span_context_extractor: self.span_context_extractor.clone(),
+        }
     }
 }
 
@@ -39,6 +78,7 @@ impl<S> Layer<S> for FastraceServerLayer {
 #[derive(Clone)]
 pub struct FastraceServerService<S> {
     service: S,
+    span_context_extractor: SpanContextExtractor,
 }
 
 impl<S, Body> Service<Request<Body>> for FastraceServerService<S>
@@ -53,10 +93,7 @@ where S: Service<Request<Body>>
     }
 
     fn call(&mut self, req: Request<Body>) -> Self::Future {
-        let headers = req.headers();
-        let parent = headers.get(TRACEPARENT_HEADER).and_then(|traceparent| {
-            SpanContext::decode_w3c_traceparent(traceparent.to_str().ok()?)
-        });
+        let parent = (self.span_context_extractor)(req.headers());
 
         let span = if let Some(parent) = parent {
             Span::root(req.uri().to_string(), parent)

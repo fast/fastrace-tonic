@@ -27,7 +27,7 @@ Add `fastrace-tonic` to your Cargo.toml:
 ```toml
 [dependencies]
 fastrace = "0.7"
-fastrace-tonic = "0.1"
+fastrace-tonic = "0.2"
 ```
 
 ### Server Integration
@@ -45,7 +45,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     // Add FastraceServerLayer to your tonic server.
     Server::builder()
-        .layer(FastraceServerLayer)
+        .layer(FastraceServerLayer::default())
         .add_service(YourServiceServer::new(YourService::default()))
         .serve("[::1]:50051".parse()?)
         .await?;
@@ -60,7 +60,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 Apply the `FastraceClientLayer` to your tonic client:
 
-```rust
+```rust,ignore
 use fastrace_tonic::FastraceClientLayer;
 use tower::ServiceBuilder;
 
@@ -91,27 +91,49 @@ Check out the [examples directory](https://github.com/fast/fastrace-tonic/tree/m
 To run the example:
 
 1. Navigate to the example directory:
-    ```
+    ```bash
     cd example
     ```
 
 2. Start the server:
-   ```
+   ```bash
    cargo run --bin server
    ```
 
 3. In another terminal, run the client:
-   ```
+   ```bash
    cargo run --bin client
    ```
 
 Both applications will output trace information showing the request flow, including the propagated context.
 
+### Custom span context extractor
+
+By default, the server layer reads the `traceparent` header and starts a new trace when it is
+missing or invalid. To customize extraction (for example, keep noop when it is missing),
+configure an extractor. Return `None` to keep noop:
+
+```rust
+use fastrace_tonic::TRACEPARENT_HEADER;
+
+let layer = fastrace_tonic::FastraceServerLayer::default()
+    .with_span_context_extractor(|headers| {
+        headers
+            .get(TRACEPARENT_HEADER)
+            .and_then(|traceparent| {
+                fastrace::prelude::SpanContext::decode_w3c_traceparent(
+                    traceparent.to_str().ok()?,
+                )
+            })
+    });
+```
+
 ## How It Works
 
 1. When a client makes a request, `FastraceClientLayer` detects if there's an active trace and adds a `traceparent` HTTP header with the trace context.
-2. When a server receives the request, `FastraceServerLayer` extracts the trace context from the `traceparent` header and creates a new span as a child of the received context.
-3. If no trace context is provided, the server creates a new root span.
+2. When a server receives the request, `FastraceServerLayer` runs the span context extractor. By default, it decodes the `traceparent` header, otherwise starts a new trace.
+3. If the extractor returns `None`, a noop span is used.
+4. When a context is available, the server creates a new root span as a child of the received context.
 
 This process ensures that all operations across services are properly connected in the resulting trace, providing visibility into the entire request lifecycle.
 
