@@ -51,9 +51,7 @@ impl FastraceServerLayer {
     ///
     /// Return `None` to keep the span as noop.
     pub fn with_span_context_extractor<F>(mut self, f: F) -> Self
-    where
-        F: Fn(&http::HeaderMap) -> Option<SpanContext> + Send + Sync + 'static,
-    {
+    where F: Fn(&http::HeaderMap) -> Option<SpanContext> + Send + Sync + 'static {
         self.span_context_extractor = Arc::new(f);
         self
     }
