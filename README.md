@@ -16,9 +16,9 @@ Context propagation is a fundamental concept in distributed tracing that enables
 
 ## Features
 
-- 🔄 **Automatic Context Propagation**: Automatically inject trace context into outgoing gRPC requests.
-- 🌉 **Seamless Integration**: Works seamlessly with the `fastrace` library for complete distributed tracing.
-- 📊 **Full Compatibility**: Works with fastrace's collection and reporting capabilities.
+- **Automatic Context Propagation**: Automatically inject trace context into outgoing gRPC requests.
+- **Seamless Integration**: Works seamlessly with the `fastrace` library for complete distributed tracing.
+- **Full Compatibility**: Works with fastrace's collection and reporting capabilities.
 
 ## Installation
 
