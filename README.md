@@ -133,7 +133,7 @@ let layer = fastrace_tonic::FastraceServerLayer::default()
 1. When a client makes a request, `FastraceClientLayer` detects if there's an active trace and adds a `traceparent` HTTP header with the trace context.
 2. When a server receives the request, `FastraceServerLayer` runs the span context extractor. By default, it decodes the `traceparent` header, otherwise starts a new trace.
 3. If the extractor returns `None`, a noop span is used.
-4. When a context is available, the server creates a new root span as a child of the received context.
+4. When a context is available, the server creates a new root span with the received context.
 
 This process ensures that all operations across services are properly connected in the resulting trace, providing visibility into the entire request lifecycle.
 
