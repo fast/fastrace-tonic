@@ -8,7 +8,7 @@ All significant changes to this project will be documented in this file.
 
 ### Breaking Changes
 
-* `FastraceServerLayer` now requires construction; use `FastraceServerLayer::default()` or `with_span_context_extractor`.
+* `FastraceServerLayer` now requires construction `FastraceServerLayer::default()`.
 
 ### New Features
 
